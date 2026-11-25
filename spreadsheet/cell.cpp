@@ -9,6 +9,12 @@
 #include <string>
 #include <optional>
 
+namespace {
+bool IsFormula(std::string_view text) {
+    return text.size() > 1 && text.front() == FORMULA_SIGN;
+}
+}  // namespace
+
 class Cell::EmptyImpl : public Cell::Impl {
 public:
     EmptyImpl() = default;
@@ -38,7 +44,7 @@ public:
 
     virtual Cell::Value GetValue() const override {
 
-        if (text_[0] == '\'') {
+        if (text_[0] == ESCAPE_SIGN) {
             return text_.substr(1);
         }
         return text_;
@@ -71,7 +77,7 @@ public:
     }
 
     std::string GetText() const override {
-        return "=" + formula_->GetExpression();
+        return FORMULA_SIGN + formula_->GetExpression();
     }
 
     std::string_view GetRawText() const override {
@@ -98,29 +104,30 @@ void Cell::Set(std::string text) {
         Clear();
         return;
     }
-    if (text.size() > 1 && text[0] == '=') {
-        auto tmp = std::make_unique<FormulaImpl>(std::move(text), sheet_);
-        auto refs = tmp->GetReferencedCells();
-        if (HaveCycle(refs)) {
-            throw CircularDependencyException("Cycle finded");
+    if (IsFormula(text)) {
+        auto new_impl = std::make_unique<FormulaImpl>(std::move(text), sheet_);
+        const auto references = new_impl->GetReferencedCells();
+        if (HaveCycle(references)) {
+            throw CircularDependencyException(
+                "Circular dependency found while setting cell " + position_.ToString());
         }
         InvalidateCache();
-        UpdateReferences(refs);
-        impl_ = std::move(tmp);
+        UpdateReferences(references);
+        impl_ = std::move(new_impl);
     } else {
-        auto tmp = std::make_unique<TextImpl>(std::move(text));
+        auto new_impl = std::make_unique<TextImpl>(std::move(text));
         InvalidateCache();
         UpdateReferences({});
-        impl_ = std::move(tmp);
+        impl_ = std::move(new_impl);
     }
     sheet_.InvalidatePrintableSize();
 }
 
 void Cell::Clear() {
-    auto tmp = std::make_unique<EmptyImpl>();
+    auto new_impl = std::make_unique<EmptyImpl>();
     InvalidateCache();
     UpdateReferences({});
-    impl_ = std::move(tmp);
+    impl_ = std::move(new_impl);
     sheet_.InvalidatePrintableSize();
 }
 
@@ -178,9 +185,9 @@ void Cell::Invalidate(std::unordered_set<Position, PositionHasher>& visited) {
     if (!visited.insert(position_).second) {
         return;
     }
-    std::vector<Position> depend = GetDependedCells();
+    const auto dependent_positions = GetDependedCells();
     cache_.reset();
-    for (auto& position : depend) {
+    for (const auto& position : dependent_positions) {
         Cell* cell = sheet_.FindCell(position);
         if (cell) {
             cell->Invalidate(visited);
