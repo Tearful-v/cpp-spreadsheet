@@ -11,10 +11,14 @@
 
 Sheet::~Sheet() = default;
 
-void Sheet::SetCell(Position pos, std::string text) {
+void Sheet::CheckPosition(Position pos) {
     if (!pos.IsValid()) {
         throw InvalidPositionException("Invalid position");
     }
+}
+
+void Sheet::SetCell(Position pos, std::string text) {
+    CheckPosition(pos);
     auto it = cells_.find(pos);
     if (it == cells_.end()) {
         auto cell = std::make_unique<Cell>(*this, pos);
@@ -32,9 +36,7 @@ void Sheet::SetCell(Position pos, std::string text) {
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position");
-    }
+    CheckPosition(pos);
     auto it = cells_.find(pos);
 
     if (it == cells_.end()) {
@@ -44,9 +46,7 @@ const CellInterface* Sheet::GetCell(Position pos) const {
 }
 
 CellInterface* Sheet::GetCell(Position pos) {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position");
-    }
+    CheckPosition(pos);
     return FindCell(pos);
 }
 
@@ -78,9 +78,7 @@ void Sheet::AddMissingCells(std::vector<std::pair<Position, std::unique_ptr<Cell
 }
 
 void Sheet::ClearCell(Position pos) {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position");
-    }
+    CheckPosition(pos);
     auto it = cells_.find(pos);
     if (it == cells_.end()) {
         return;

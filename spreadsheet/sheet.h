@@ -27,6 +27,7 @@ public:
     void InvalidatePrintableSize();
 
 private:
+    static void CheckPosition(Position pos);
     void PrintCells(std::ostream& output,
                     const std::function<void(const CellInterface&)>& print_cell) const;
     Size GetActualSize() const;
