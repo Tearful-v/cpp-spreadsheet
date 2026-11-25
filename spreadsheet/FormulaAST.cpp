@@ -144,8 +144,6 @@ public:
         }
     }
 
-// Реализуйте метод Evaluate() для бинарных операций.
-// При делении на 0 выбрасывайте ошибку вычисления FormulaError
     double Evaluate(const SheetInterface& sheet) const override {
         auto left = lhs_ -> Evaluate(sheet);
         auto right = rhs_ -> Evaluate(sheet);
@@ -199,7 +197,6 @@ public:
         return EP_UNARY;
     }
 
-// Реализуйте метод Evaluate() для унарных операций.
     double Evaluate(const SheetInterface& sheet) const override {
         auto result = operand_ -> Evaluate(sheet);
         if (type_ == UnaryPlus) {
