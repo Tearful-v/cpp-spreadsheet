@@ -25,7 +25,6 @@ public:
     bool HaveCycle(const std::vector<Position>& new_references) const;
 
     void InvalidateCache();
-    bool HaveCache() const;
 
     Value GetValue() const override;
     std::string GetText() const override;

@@ -65,10 +65,6 @@ public:
         return "=" + formula_->GetExpression();
     }
 
-    FormulaInterface::Value Evaluate() const {
-        return formula_->Evaluate(sheet_);
-    }
-
     std::vector<Position> GetReferencedCells() const {
         return formula_->GetReferencedCells();
     }
@@ -226,8 +222,4 @@ std::vector<Position> Cell::GetDependedCells() const {
 void Cell::InvalidateCache() {
     std::unordered_set<Position, PositionHasher> visited;
     Invalidate(visited);
-}
-
-bool Cell::HaveCache() const {
-    return cache_.has_value();
 }

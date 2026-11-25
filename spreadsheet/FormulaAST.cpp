@@ -363,7 +363,6 @@ public:
             throw FormulaException("Invalid position");
         }
         referenced_cells_.push_back(position);
-
         args_.push_back(std::make_unique<CellExpr>(std::move(address), position));
     }
 
