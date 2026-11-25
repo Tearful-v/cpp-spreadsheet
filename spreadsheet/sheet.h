@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -33,6 +34,5 @@ private:
     Size GetActualSize() const;
 
     std::unordered_map<Position, std::unique_ptr<Cell>, PositionHasher> cells_;
-    mutable Size printable_size_{};
-    mutable bool printable_size_dirty_ = false;
+    mutable std::optional<Size> printable_size_;
 };

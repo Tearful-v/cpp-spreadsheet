@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 
 Sheet::~Sheet() = default;
@@ -92,11 +91,10 @@ void Sheet::ClearCell(Position pos) {
 }
 
 Size Sheet::GetPrintableSize() const {
-    if (printable_size_dirty_) {
+    if (!printable_size_) {
         printable_size_ = GetActualSize();
-        printable_size_dirty_ = false;
     }
-    return printable_size_;
+    return *printable_size_;
 }
 
 void Sheet::PrintValues(std::ostream& output) const {
@@ -116,7 +114,7 @@ std::unique_ptr<SheetInterface> CreateSheet() {
 }
 
 void Sheet::InvalidatePrintableSize() {
-    printable_size_dirty_ = true;
+    printable_size_.reset();
 }
 
 void Sheet::PrintCells(std::ostream& output,
