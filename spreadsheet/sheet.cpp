@@ -7,6 +7,7 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 
 Sheet::~Sheet() = default;
 
@@ -57,6 +58,23 @@ Cell* Sheet::FindCell(Position pos) {
     }
 
     return it->second.get();
+}
+
+void Sheet::AddMissingCells(std::vector<std::pair<Position, std::unique_ptr<Cell>>> cells) {
+    auto current = cells.begin();
+    try {
+        for (; current != cells.end(); ++current) {
+            auto& [position, cell] = *current;
+            if (!cells_.try_emplace(position, std::move(cell)).second) {
+                throw std::logic_error("Cell already exists");
+            }
+        }
+    } catch (...) {
+        for (auto inserted = cells.begin(); inserted != current; ++inserted) {
+            cells_.erase(inserted->first);
+        }
+        throw;
+    }
 }
 
 void Sheet::ClearCell(Position pos) {

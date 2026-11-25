@@ -6,6 +6,8 @@
 #include <functional>
 #include <memory>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 class Sheet : public SheetInterface {
 public:
@@ -20,13 +22,11 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
+    Cell* FindCell(Position pos);
+    void AddMissingCells(std::vector<std::pair<Position, std::unique_ptr<Cell>>> cells);
+    void InvalidatePrintableSize();
 
 private:
-    friend class Cell;
-
-    Cell* FindCell(Position pos);
-
-    void InvalidatePrintableSize();
     void PrintCells(std::ostream& output,
                     const std::function<void(const CellInterface&)>& print_cell) const;
     Size GetActualSize() const;

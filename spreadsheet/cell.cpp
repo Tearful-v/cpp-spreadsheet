@@ -195,36 +195,39 @@ void Cell::UpdateReferences(const std::vector<Position>& new_references) { //Ð¼Ð
     decltype(referenced_cells_) next_references(
         new_references.begin(), new_references.end());
 
-    decltype(sheet_.cells_) new_cells;
-    std::unordered_map<Cell*, decltype(dependent_cells_)> next_dependents;
+    std::vector<std::pair<Position, std::unique_ptr<Cell>>> new_cells;
+    std::vector<Cell*> updated_cells;
+    updated_cells.reserve(next_references.size());
+
+    try {
+        for (const Position& pos : next_references) {
+            if (referenced_cells_.count(pos)) {
+                continue;
+            }
+            if (Cell* cell = sheet_.FindCell(pos)) {
+                if (cell->dependent_cells_.insert(position_).second) {
+                    updated_cells.push_back(cell);
+                }
+            } else {
+                auto empty_cell = std::make_unique<Cell>(sheet_, pos);
+                empty_cell->dependent_cells_.insert(position_);
+                new_cells.emplace_back(pos, std::move(empty_cell));
+            }
+        }
+        sheet_.AddMissingCells(std::move(new_cells));
+    } catch (...) {
+        for (Cell* cell : updated_cells) {
+            cell->dependent_cells_.erase(position_);
+        }
+        throw;
+    }
 
     for (const Position& pos : referenced_cells_) {
-        if (Cell* cell = sheet_.FindCell(pos)) {
-            auto [it, inserted] =
-                next_dependents.try_emplace(cell, cell->dependent_cells_);
-            it->second.erase(position_);
+        if (!next_references.count(pos)) {
+            if (Cell* cell = sheet_.FindCell(pos)) {
+                cell->dependent_cells_.erase(position_);
+            }
         }
-    }
-
-    for (const Position& pos : next_references) {
-        if (Cell* cell = sheet_.FindCell(pos)) {
-            auto [it, inserted] =
-                next_dependents.try_emplace(cell, cell->dependent_cells_);
-            it->second.insert(position_);
-        } else {
-            auto empty_cell = std::make_unique<Cell>(sheet_, pos);
-            empty_cell->dependent_cells_.insert(position_);
-            new_cells.emplace(pos, std::move(empty_cell));
-        }
-    }
-
-    if (!new_cells.empty()) {
-        sheet_.cells_.reserve(sheet_.cells_.size() + new_cells.size());
-        sheet_.cells_.merge(new_cells);
-    }
-
-    for (auto& [cell, dependents] : next_dependents) {
-        cell->dependent_cells_.swap(dependents);
     }
     referenced_cells_.swap(next_references);
 }
