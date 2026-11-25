@@ -359,9 +359,10 @@ public:
         std::string address = ctx->CELL()->getText();
         const Position position = Position::FromString(address);
 
-        if (position.IsValid()) {
-            referenced_cells_.push_back(position);
+        if (!position.IsValid()) {
+            throw FormulaException("Invalid position");
         }
+        referenced_cells_.push_back(position);
 
         args_.push_back(std::make_unique<CellExpr>(std::move(address), position));
     }
