@@ -162,8 +162,6 @@ public:
             case Subtract:
                 result = left - right;
                 break;
-            default:
-                throw std::logic_error("Unknown binary operator");
         }
 
         if (!std::isfinite(result)) {
