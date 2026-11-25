@@ -100,35 +100,31 @@ void Cell::Set(std::string text) {
     if (text == impl_->GetRawText()) {
         return;
     }
+
+    std::unique_ptr<Impl> new_impl;
+    std::vector<Position> references;
     if (text.empty()) {
-        Clear();
-        return;
-    }
-    if (IsFormula(text)) {
-        auto new_impl = std::make_unique<FormulaImpl>(std::move(text), sheet_);
-        const auto references = new_impl->GetReferencedCells();
+        new_impl = std::make_unique<EmptyImpl>();
+    } else if (IsFormula(text)) {
+        auto formula_impl = std::make_unique<FormulaImpl>(std::move(text), sheet_);
+        references = formula_impl->GetReferencedCells();
         if (HaveCycle(references)) {
             throw CircularDependencyException(
                 "Circular dependency found while setting cell " + position_.ToString());
         }
-        InvalidateCache();
-        UpdateReferences(references);
-        impl_ = std::move(new_impl);
+        new_impl = std::move(formula_impl);
     } else {
-        auto new_impl = std::make_unique<TextImpl>(std::move(text));
-        InvalidateCache();
-        UpdateReferences({});
-        impl_ = std::move(new_impl);
+        new_impl = std::make_unique<TextImpl>(std::move(text));
     }
+
+    InvalidateCache();
+    UpdateReferences(references);
+    impl_ = std::move(new_impl);
     sheet_.InvalidatePrintableSize();
 }
 
 void Cell::Clear() {
-    auto new_impl = std::make_unique<EmptyImpl>();
-    InvalidateCache();
-    UpdateReferences({});
-    impl_ = std::move(new_impl);
-    sheet_.InvalidatePrintableSize();
+    Set("");
 }
 
 Cell::Value Cell::GetValue() const {
