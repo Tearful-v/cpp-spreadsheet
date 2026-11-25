@@ -20,6 +20,10 @@ public:
     virtual std::string GetText() const override {
         return "";
     }
+
+    std::string_view GetRawText() const override {
+        return {};
+    }
 };
 
 Cell::Cell(Sheet& sheet, Position position)
@@ -44,6 +48,10 @@ public:
         return text_;
     }
 
+    std::string_view GetRawText() const override {
+        return text_;
+    }
+
 private:
     std::string text_;
 };
@@ -51,7 +59,8 @@ private:
 class Cell::FormulaImpl : public Cell::Impl {
 public:
     FormulaImpl(std::string text, const SheetInterface& sheet)
-        : formula_(ParseFormula(std::move(text)))
+        : raw_text_(std::move(text))
+        , formula_(ParseFormula(raw_text_.substr(1)))
         , sheet_(sheet) {
     }
 
@@ -65,11 +74,16 @@ public:
         return "=" + formula_->GetExpression();
     }
 
+    std::string_view GetRawText() const override {
+        return raw_text_;
+    }
+
     std::vector<Position> GetReferencedCells() const {
         return formula_->GetReferencedCells();
     }
 
 private:
+    std::string raw_text_;
     std::unique_ptr<FormulaInterface> formula_;
     const SheetInterface& sheet_;
 };
@@ -77,12 +91,15 @@ private:
 Cell::~Cell() = default;
 
 void Cell::Set(std::string text) {
+    if (text == impl_->GetRawText()) {
+        return;
+    }
     if (text.empty()) {
         Clear();
         return;
     }
     if (text.size() > 1 && text[0] == '=') {
-        auto tmp = std::make_unique<FormulaImpl>(text.substr(1), sheet_);
+        auto tmp = std::make_unique<FormulaImpl>(std::move(text), sheet_);
         auto refs = tmp->GetReferencedCells();
         if (HaveCycle(refs)) {
             throw CircularDependencyException("Cycle finded");

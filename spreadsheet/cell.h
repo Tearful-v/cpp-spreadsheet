@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -37,6 +38,7 @@ private:
 
         virtual Value GetValue() const = 0;
         virtual std::string GetText() const = 0;
+        virtual std::string_view GetRawText() const = 0;
     };
 
     enum class Color {
