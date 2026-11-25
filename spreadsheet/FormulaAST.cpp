@@ -145,22 +145,31 @@ public:
     }
 
     double Evaluate(const SheetInterface& sheet) const override {
-        auto left = lhs_ -> Evaluate(sheet);
-        auto right = rhs_ -> Evaluate(sheet);
-        if (type_ == Divide && right == 0) {
-            throw FormulaError(FormulaError::Category::Arithmetic);
-        }
+        const double left = lhs_->Evaluate(sheet);
+        const double right = rhs_->Evaluate(sheet);
+        double result;
+
         switch (type_) {
             case Multiply:
-                return left * right;
+                result = left * right;
+                break;
             case Divide:
-                return left / right;
+                result = left / right;
+                break;
             case Add:
-                return left + right;
+                result = left + right;
+                break;
             case Subtract:
-                return left - right;
+                result = left - right;
+                break;
+            default:
+                throw std::logic_error("Unknown binary operator");
         }
-        return false;
+
+        if (!std::isfinite(result)) {
+            throw FormulaError(FormulaError::Category::Arithmetic);
+        }
+        return result;
     }
 
 private:
@@ -218,7 +227,7 @@ private:
 
 class CellExpr final : public Expr {
 public:
-    explicit CellExpr(std::string address, Position pos) : 
+    explicit CellExpr(std::string address, Position pos) :
         address_(std::move(address)), pos_(std::move(pos)) {}
 
     void Print(std::ostream& out) const override {
@@ -269,7 +278,7 @@ public:
             }
         }, cell->GetValue());
     }
-    
+
 private:
     std::string address_;
     Position pos_;
